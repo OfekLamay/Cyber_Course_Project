@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home</title>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <h2>Welcome, {{ user.username }}!</h2>
+        <p>You are logged in.</p>
+        <form method="post" action="/Sign_Out/">
+            {% csrf_token %}
+            <button type="submit">Sign out</button>
+        </form>
+    {% else %}
+        <h2>Welcome to Our Site</h2>
+        <p>Please sign in or create an account.</p>
+        <p><a href="/Sign_In/">Sign In</a></p>
+        <p>Don't have an account? <a href="/Sign_Up/">Sign Up</a></p>
+    {% endif %}
+</body>
+</html>
