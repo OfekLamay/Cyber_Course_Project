@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Customer - {{ customer.full_name }} - Communication_LTD</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+        
+        .warning-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .warning-message {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        
+        .warning-message h3 {
+            margin: 0 0 15px 0;
+            color: #721c24;
+        }
+        
+        .customer-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        
+        .customer-info h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .info-value {
+            color: #2c3e50;
+        }
+        
+        .actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            min-width: 150px;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .confirmation-form {
+            margin-top: 20px;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8d7da;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            transform: scale(1.5);
+        }
+        
+        .checkbox-container label {
+            color: #721c24;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .delete-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .delete-btn:disabled:hover {
+            background: #bdc3c7;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="warning-icon">⚠️</div>
+            <h1>Delete Internet Customer</h1>
+            <p>📡 Communication_LTD</p>
+        </div>
+
+        <div class="content">
+            <div class="warning-message">
+                <h3>🚨 Warning: Permanent Action</h3>
+                <p>You are about to permanently delete this customer from your database. This action <strong>cannot be undone</strong>.</p>
+                <p>All information associated with this customer will be permanently lost.</p>
+            </div>
+
+            <div class="customer-info">
+                <h4>👤 Customer to be deleted:</h4>
+                
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">{{ customer.full_name }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ customer.email|default:"Not provided" }}</span>
+                </div>
+                
+                {% if customer.phone %}
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">{{ customer.display_phone }}</span>
+                </div>
+                {% endif %}
+                
+                {% if customer.company_name %}
+                <div class="info-row">
+                    <span class="info-label">Company:</span>
+                    <span class="info-value">{{ customer.company_name }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="info-row">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value">{{ customer.get_status_display }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Created:</span>
+                    <span class="info-value">{{ customer.created_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+
+            <form method="post" class="confirmation-form">
+                {% csrf_token %}
+                
+                <div class="checkbox-container">
+                    <input type="checkbox" id="confirm-delete" name="confirm_delete" required>
+                    <label for="confirm-delete">I understand this action is permanent and cannot be undone</label>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-danger delete-btn" id="delete-button" disabled>
+                        🗑️ Yes, Delete Customer
+                    </button>
+                    <a href="{% url 'customer_detail' customer.id %}" class="btn btn-secondary">
+                        ❌ Cancel - Keep Customer
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Enable/disable delete button based on confirmation checkbox
+        document.getElementById('confirm-delete').addEventListener('change', function() {
+            const deleteButton = document.getElementById('delete-button');
+            deleteButton.disabled = !this.checked;
+        });
+    </script>
+</body>
+</html>
