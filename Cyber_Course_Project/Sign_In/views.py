@@ -3,22 +3,23 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import connection
+from . import utils
 
 # Create your views here.
 def Sign_In_view(request):
     if request.method == "POST":
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
+         #Accepting username and password from POST request
+        username , password = utils.request_Post(request)
         if username and password:
             user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
-                return redirect('home')
+            if user:
+                #Redirect to home with login
+                return utils.redirect_home(request, user)
             else:
-                messages.error(request, 'Invalid username or password. Please try again.')
+               # Display invalid credentials message
+               utils.display_message(request, error=1)
         else:
-            messages.error(request, 'Please enter both username and password.')
-    
+            # Display missing fields message
+            utils.display_message(request, error=2)
+    #render the sign-in page
     return render(request, 'Sign_In.html')

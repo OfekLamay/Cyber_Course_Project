@@ -27,3 +27,4 @@ def Sign_Up_view(request):
     else:
         form = CustomUserCreationForm()
     return render(request, 'Sign_Up.html', {'form': form})
+
