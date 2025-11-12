@@ -14,7 +14,7 @@ def display_message(request, error):
             messages.error(request, 'Please enter both username and password.')
 
 
-def redirect_home(request, result):
+def redirect_login(request, result):
     # Log the user in
     user_obj = User.objects.get(id=result[0][0])  # Assuming user ID is in the first column
     login(request, user_obj)

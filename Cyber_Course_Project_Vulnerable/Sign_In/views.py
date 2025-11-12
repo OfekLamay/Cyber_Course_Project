@@ -16,7 +16,7 @@ def Sign_In_view(request):
             result = utils.Vulnerable_query_pass(username, password)
             if result:
                 # Redirect to home with login
-                return utils.redirect_home(request, result)
+                return utils.redirect_login(request, result)
             else:
                 # Display invalid credentials message
                 utils.display_message(request, error=1)
@@ -25,3 +25,5 @@ def Sign_In_view(request):
             utils.display_message(request, error=2)
     # render the sign-in page
     return render(request, 'Sign_In.html')
+
+
