@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏢 Customer Management System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .controls {
+            padding: 30px;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .customers-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        .customers-table th,
+        .customers-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .customers-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .customers-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-blocked {
+            background: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .no-customers {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .pagination a {
+            padding: 8px 12px;
+            margin: 0 5px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            color: #333;
+            border-radius: 4px;
+        }
+        
+        .pagination a:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        .messages {
+            margin: 20px 30px;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 Communication_LTD - Customer Database</h1>
+            <p>Manage internet service customers and subscriptions</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_customers }}</div>
+                <div>Total Customers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ customers.paginator.num_pages }}</div>
+                <div>Pages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ customers|length }}</div>
+                <div>Showing</div>
+            </div>
+        </div>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="controls">
+            <div class="controls-row">
+                <div class="search-box">
+                    <form method="GET">
+                        <input type="text" name="search" value="{{ search_query }}" 
+                               placeholder="🔍 Search internet service customers by name, email, company..." 
+                               onchange="this.form.submit()">
+                    </form>
+                </div>
+                <div>
+                    <a href="{% url 'add_customer' %}" class="btn btn-success">➕ Add New Internet Customer</a>
+                    <a href="{% url 'home' %}" class="btn btn-info">🏠 Back to Portal</a>
+                </div>
+            </div>
+        </div>
+
+        {% if customers %}
+            <table class="customers-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                        <tr>
+                            <td>
+                                <strong>{{ customer.full_name }}</strong>
+                                {% if customer.job_title %}
+                                    <br><small style="color: #666;">{{ customer.job_title }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ customer.email }}</td>
+                            <td>{{ customer.display_phone }}</td>
+                            <td>{{ customer.company_name|default:"—" }}</td>
+                            <td>
+                                <span class="status-badge status-{{ customer.status }}">
+                                    {{ customer.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ customer.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'customer_detail' customer.id %}" class="btn btn-primary" style="padding: 6px 12px; font-size: 14px;">👁️ View</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if customers.has_other_pages %}
+                <div class="pagination">
+                    {% if customers.has_previous %}
+                        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">&laquo; First</a>
+                        <a href="?page={{ customers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">‹ Previous</a>
+                    {% endif %}
+
+                    <span>Page {{ customers.number }} of {{ customers.paginator.num_pages }}</span>
+
+                    {% if customers.has_next %}
+                        <a href="?page={{ customers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next ›</a>
+                        <a href="?page={{ customers.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Last &raquo;</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="no-customers">
+                <h3>📋 No Customers Found</h3>
+                {% if search_query %}
+                    <p>No customers match your search: "<strong>{{ search_query }}</strong>"</p>
+                    <a href="{% url 'customer_system' %}" class="btn btn-info">Clear Search</a>
+                {% else %}
+                    <p>You haven't added any customers yet.</p>
+                    <a href="{% url 'add_customer' %}" class="btn btn-success">➕ Add Your First Customer</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
