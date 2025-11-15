@@ -10,7 +10,7 @@ def Sign_In_view(request):
         #Accepting username and password from POST request
         username, password = utils.request_Post(request)
         if username and password:
-            # Vulnerable SQL query - directly inserting user input
+            # Secured SQL query - Comparing user input
             user = authenticate(request, username=username, password=password)
             if user:
                 # Redirect to home with login
