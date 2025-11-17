@@ -277,7 +277,7 @@
                 <div class="info-item">
                     <span class="info-label">Phone:</span>
                     <span class="info-value contact-links">
-                        {% if customer.phone %}
+                        {% if customer.phone_number %}
                             <a href="tel:{{ customer.phone }}">{{ customer.display_phone }}</a>
                         {% else %}
                             <span class="empty-value">Not provided</span>
@@ -314,24 +314,6 @@
                 </div>
                 
                 <div class="info-item">
-                    <span class="info-label">Market Sector:</span>
-                    <span class="info-value">
-                        {{ customer.industry|default:"<span class='empty-value'>Not specified</span>" }}
-                    </span>
-                </div>
-                
-                <div class="info-item">
-                    <span class="info-label">Company Size:</span>
-                    <span class="info-value">
-                        {% if customer.company_size %}
-                            {{ customer.get_company_size_display }}
-                        {% else %}
-                            <span class="empty-value">Not specified</span>
-                        {% endif %}
-                    </span>
-                </div>
-                
-                <div class="info-item">
                     <span class="info-label">Job Title:</span>
                     <span class="info-value">
                         {{ customer.job_title|default:"<span class='empty-value'>Not specified</span>" }}
@@ -358,7 +340,7 @@
 
         <div class="created-info">
             <p>
-                👤 Managed by: {{ customer.user.get_full_name|default:customer.user.username }}<br>
+                👤 Managed by: {{ customer.created_by }}<br>
                 📅 Created: {{ customer.created_at|date:"F d, Y \a\t g:i A" }}<br>
                 🔄 Last Updated: {{ customer.updated_at|date:"F d, Y \a\t g:i A" }}
             </p>
