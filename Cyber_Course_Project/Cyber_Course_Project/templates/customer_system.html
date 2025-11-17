@@ -32,8 +32,36 @@
         .header h1 {
             margin: 0;
             font-size: 2.5em;
+        }  
+
+        /*ADI*/
+
+        .header-actions {
+             margin-top: 10px;
+             text-align: right;  
         }
-        
+
+        .btn-change-password {
+             display: inline-block;
+             padding: 8px 14px;
+              border-radius: 8px;
+             background: linear-gradient(135deg, #1e3c72, #2a5298);
+             color: #fff;
+             font-weight: 600;
+             font-size: 0.95rem;
+             text-decoration: none;
+             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+             transition: 0.2s;
+         }
+
+        .btn-change-password:hover {
+             transform: translateY(-2px);
+             box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+         }
+
+         /*ADI*/
+
+ 
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -224,10 +252,17 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>📡 Communication_LTD - Customer Database</h1>
-            <p>Manage internet service customers and subscriptions</p>
+      <div class="header">
+        <h1>📡 Communication_LTD - Customer Database</h1>
+        <p>Manage internet service customers and subscriptions</p>
+  
+        <!-- ADI -->
+        <div class="header-actions">
+            <a href="{% url 'change_password' %}" class="btn-change-password">
+                Change Password
+            </a>
         </div>
+      </div>
 
         <div class="stats">
             <div class="stat-card">
