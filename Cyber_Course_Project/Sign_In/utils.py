@@ -65,7 +65,7 @@ class AuthenticationUtils:
         try:
             # Step 1: Find user by username
             user = User.objects.get(username=username)
-            # Step 2: Use your custom HMAC+Salt hasher directly
+            # Step 2: Use custom HMAC+Salt hasher directly from imported module hashers.py
             hasher = HMACPasswordHasher()
             # Step 3: Verify password using your custom hasher
             if hasher.verify(password, user.password):
@@ -78,17 +78,3 @@ class AuthenticationUtils:
         except Exception as e:
             # Handle any other errors
             return None
-    
-
-# Backward compatibility - maintain old function-based interface
-def display_message(request, error):
-    """Wrapper function for backward compatibility"""
-    return AuthenticationUtils.display_message(request, error)
-
-def redirect_login(request, user):
-    """Wrapper function for backward compatibility"""
-    return AuthenticationUtils.redirect_login(request, user)
-
-def request_Post(request):
-    """Wrapper function for backward compatibility"""
-    return AuthenticationUtils.request_Post(request)

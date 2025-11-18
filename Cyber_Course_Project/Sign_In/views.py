@@ -37,12 +37,10 @@ class SignInView(FormView):
         return utils.AuthenticationUtils.custom_authenticate(username, password)
         
     def _handle_successful_login(self, user):
-        """Private method: Handle successful authentication"""
-        return utils.redirect_login(self.request, user)
+        return utils.AuthenticationUtils.redirect_login(self.request, user)
     
     def _handle_failed_login(self):
-        """Private method: Handle failed authentication"""
-        utils.display_message(self.request, error=1)
+        utils.AuthenticationUtils.display_message(self.request, error=1)
  
     
     def form_valid(self, form):
