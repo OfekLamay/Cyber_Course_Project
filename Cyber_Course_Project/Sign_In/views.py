@@ -53,19 +53,7 @@ class SignInView(FormView):
             self._handle_failed_login()
             return super().form_invalid(form)
     
-   
 
-# Keep the old function-based view as an alias for backward compatibility
-"""def Sign_In_view(request):
-    #Function-based view wrapper for backward compatibility
-    view = SignInView()
-    if request.method == 'GET':
-        return view.get(request)
-    elif request.method == 'POST':
-        return view.post(request)
-    else:
-        return view.get(request)
- """
 
 def forgot_password(request):
     # Placeholder page (client-side only for now)
@@ -118,3 +106,4 @@ def change_password(request):
 
     # If this is a GET request, simply render the form
     return render(request, "change_password.html")
+
