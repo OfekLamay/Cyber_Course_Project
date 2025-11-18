@@ -1,32 +1,73 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import connection
+from django.views import View
+from django.views.generic import FormView
+from django import forms
+from django.contrib.auth.hashers import check_password
 from . import utils
 
 #ADI#
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 
-# Create your views here.
-def Sign_In_view(request):
-    if request.method == "POST":
-        #Accepting username and password from POST request
-        username, password = utils.request_Post(request)
-        if username and password:
-            # Secured SQL query - Comparing user input
-            user = authenticate(request, username=username, password=password)
-            if user:
-                # Redirect to home with login
-                return utils.redirect_login(request, user)
-            else:
-                utils.display_message(request, error=1)
-        else:
-            utils.display_message(request, error=2)
+class SignInForm(forms.Form):
+    username = forms.CharField(max_length=150)
+    password = forms.CharField(widget=forms.PasswordInput)
 
-    return render(request, 'Sign_In.html')
+# Create your views here.
+class SignInView(FormView):
+    """
+    Class-based view for Sign-In functionality
+    Methods:
+    - form_valid: Handle valid form submission filtering input
+    - _authenticate_user: Private method for user authentication
+    - _handle_successful_login: Private method for successful login handling
+    - _handle_failed_login: Private method for failed login handling
+    - private methods are prefixed with an underscore _
+    """ 
+    
+    template_name = 'Sign_In.html'
+    form_class = SignInForm
+    success_url = '/home/'
+    
+    def _authenticate_user(self, username, password):
+        return utils.AuthenticationUtils.custom_authenticate(username, password)
+        
+    def _handle_successful_login(self, user):
+        """Private method: Handle successful authentication"""
+        return utils.redirect_login(self.request, user)
+    
+    def _handle_failed_login(self):
+        """Private method: Handle failed authentication"""
+        utils.display_message(self.request, error=1)
  
+    
+    def form_valid(self, form):
+        username = form.cleaned_data['username']
+        password = form.cleaned_data['password']
+        user = self._authenticate_user(username, password)
+        if user:
+            return self._handle_successful_login(user)
+        else:
+            self._handle_failed_login()
+            return super().form_invalid(form)
+    
+   
+
+# Keep the old function-based view as an alias for backward compatibility
+"""def Sign_In_view(request):
+    #Function-based view wrapper for backward compatibility
+    view = SignInView()
+    if request.method == 'GET':
+        return view.get(request)
+    elif request.method == 'POST':
+        return view.post(request)
+    else:
+        return view.get(request)
+ """
 
 def forgot_password(request):
     # Placeholder page (client-side only for now)
