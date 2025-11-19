@@ -72,11 +72,13 @@ class CustomerForm(forms.ModelForm):
                 
         # Custom validation messages
         self.fields['email'].error_messages = {
+            'required': 'Please enter an email address.',
             'invalid': 'Please enter a valid email address.',
             'unique': 'A customer with this email already exists.'
         }
         
         self.fields['phone_number'].error_messages = {
+            'required': 'Please enter a phone number.',
             'invalid': 'Please enter a valid phone number (e.g., +972-50-1234567).'
         }
 

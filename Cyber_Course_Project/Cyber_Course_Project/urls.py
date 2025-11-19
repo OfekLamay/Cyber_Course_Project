@@ -2,6 +2,9 @@ from django.contrib import admin
 from django.urls import path, include
 from . views import home, customer_system, add_customer, customer_detail, edit_customer, delete_customer
 
+#ADI#
+from Sign_In import views as sign_in_views
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -11,6 +14,9 @@ urlpatterns = [
     path('Sign_In/', include('Sign_In.urls')),
     path('Sign_Out/', include('Sign_Out.urls')),
     
+    #ADI#
+    path('change-password/', sign_in_views.change_password, name='change_password'),
+
     # Customer Management URLs
     path('customers/', customer_system, name='customer_system'),
     path('customers/add/', add_customer, name='add_customer'),
