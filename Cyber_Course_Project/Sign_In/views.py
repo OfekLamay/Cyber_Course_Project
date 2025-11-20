@@ -7,7 +7,8 @@ from django.views import View
 from django.views.generic import FormView
 from django import forms
 from django.contrib.auth.hashers import check_password
-from . import utils
+from .Login_Authentications import Authentication , User_Session_Manager
+from django.contrib.auth import authenticate
 
 #ADI#
 from django.contrib.auth import update_session_auth_hash
@@ -19,41 +20,47 @@ class SignInForm(forms.Form):
 
 # Create your views here.
 class SignInView(FormView):
-    """
-    Class-based view for Sign-In functionality
-    Methods:
-    - form_valid: Handle valid form submission filtering input
-    - _authenticate_user: Private method for user authentication
-    - _handle_successful_login: Private method for successful login handling
-    - _handle_failed_login: Private method for failed login handling
-    - private methods are prefixed with an underscore _
-    """ 
+
     
     template_name = 'Sign_In.html'
     form_class = SignInForm
     success_url = '/home/'
     
+    #authentication from Login_Authentications.py Where Security is Implemented
+    #TODO Add LockdownManagement integration for account lockout on multiple failed attempts
+    #TODO 
     def _authenticate_user(self, username, password):
-        return utils.AuthenticationUtils.custom_authenticate(username, password)
+        return Authentication.custom_authenticate(username, password)
         
+        #login handler
     def _handle_successful_login(self, user):
-        return utils.AuthenticationUtils.redirect_login(self.request, user)
+        login(self.request, user)
+        return User_Session_Manager.redirect_login(self.request, user,self.success_url)
     
-    def _handle_failed_login(self):
-        utils.AuthenticationUtils.display_message(self.request, error=1)
+        #failed login handler+Security measures using Login_Authentications.py
+    def _handle_failed_login(self,):
+        # messages and security handling for failed login such as brute force attacks TODO
+        Authentication.display_message(self.request, error=1)
  
+    def Post_request(self):
+        username = self.request.POST.get('username')
+        password = self.request.POST.get('password')
+        return username, password
     
     def form_valid(self, form):
-        username = form.cleaned_data['username']
-        password = form.cleaned_data['password']
-        user = self._authenticate_user(username, password)
+        username, password = self.Post_request()
+        #TODO Integrate Lockdown Brute Force Protection
+        #TODO Implement parameterized queries to prevent SQL injection
+        #TODO Use prepared statements for database queries
+        #TODO Sanitize user inputs to prevent XSS attacks
+        #TODO Change DB schema for Security requirements
+        user = authenticate(username=username, password=password)
         if user:
             return self._handle_successful_login(user)
         else:
             self._handle_failed_login()
             return super().form_invalid(form)
     
-
 
 def forgot_password(request):
     # Placeholder page (client-side only for now)
@@ -106,4 +113,3 @@ def change_password(request):
 
     # If this is a GET request, simply render the form
     return render(request, "change_password.html")
-
