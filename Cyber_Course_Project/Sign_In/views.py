@@ -34,7 +34,6 @@ class SignInView(FormView):
         
         #login handler
     def _handle_successful_login(self, user):
-        login(self.request, user)
         return User_Session_Manager.redirect_login(self.request, user,self.success_url)
     
         #failed login handler+Security measures using Login_Authentications.py
