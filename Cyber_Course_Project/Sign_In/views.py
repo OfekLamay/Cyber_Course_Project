@@ -7,13 +7,14 @@ from django.views import View
 from django.views.generic import FormView
 from django import forms
 from django.contrib.auth.hashers import check_password
-from .Login_Authentications import Authentication , User_Session_Manager
+from .Login_Authentications import User_Session_Manager
 from django.contrib.auth import authenticate
 from .models import PasswordResetCode
 from django.utils import timezone
 import hashlib, os
 from datetime import timedelta
-
+from .User_Lockdown_Mangement import LockdownManagement
+from .Security_Config import SIGN_IN_CONFIG
 try:
     # Optional: load .env if available
     from dotenv import load_dotenv
@@ -42,7 +43,6 @@ class SignInForm(forms.Form):
     )
 
 
-# Create your views here.
 class SignInView(FormView):
     template_name = 'Sign_In.html'
     form_class = SignInForm
@@ -52,15 +52,35 @@ class SignInView(FormView):
         username = form.cleaned_data['username']
         password = form.cleaned_data['password']
 
+        # Try to get the user object first
+        try:
+            user_obj = User.objects.get(username=username)
+        except User.DoesNotExist:
+            user_obj = None
+
+        # Check lockout BEFORE authentication
+        if user_obj and LockdownManagement.is_user_locked(user_obj):
+            messages.error(
+                self.request,
+                f"Account temporarily locked due to {SIGN_IN_CONFIG['max_attempts']} failed attempts."
+            )
+            return self.form_invalid(form)
+
+        # Authenticate only if not locked
         user = authenticate(self.request, username=username, password=password)
+
         if user:
-            # Use User_Session_Manager instead of repeating login + messages
+            LockdownManagement.reset_attempts(user)
             return User_Session_Manager.redirect_login(
                 self.request, user, self.success_url
             )
         else:
+            # Register failed attempt if user exists
+            if user_obj:
+                LockdownManagement.register_failed_attempt(user_obj)
+
+            # Generic error message
             messages.error(self.request, "Invalid username or password")
-            # Optional: here you could implement brute-force prevention
             return self.form_invalid(form)
         
         
