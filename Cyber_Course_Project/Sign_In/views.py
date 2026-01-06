@@ -44,9 +44,7 @@ class SignInView(FormView):
     form_class = SignInForm
     success_url = '/home/'
     
-    #authentication from Login_Authentications.py Where Security is Implemented
-    #TODO Add LockdownManagement integration for account lockout on multiple failed attempts
-    #TODO 
+
     def _authenticate_user(self, username, password):
         return Authentication.custom_authenticate(username, password)
         
@@ -65,19 +63,17 @@ class SignInView(FormView):
         return username, password
     
     def form_valid(self, form):
-        username, password = self.Post_request()
-        #TODO Integrate Lockdown Brute Force Protection
-        #TODO Implement parameterized queries to prevent SQL injection
-        #TODO Use prepared statements for database queries
-        #TODO Sanitize user inputs to prevent XSS attacks
-        #TODO Change DB schema for Security requirements
-        user = authenticate(username=username, password=password)
+        username = form.cleaned_data['username']
+        password = form.cleaned_data['password']
+
+        user = authenticate(self.request, username=username, password=password)
         if user:
-            return self._handle_successful_login(user)
-        else:
-            self._handle_failed_login()
-            return super().form_invalid(form)
-    
+            login(self.request, user)
+            messages.success(self.request, f"Welcome back, {user.get_full_name()}!")
+            return redirect(self.success_url)
+
+        messages.error(self.request, "Invalid username or password")
+        return self.form_invalid(form)
 
 def forgot_password(request):
     """
