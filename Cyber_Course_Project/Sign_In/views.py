@@ -33,48 +33,37 @@ import re
 from django.conf import settings as dj_settings
 
 class SignInForm(forms.Form):
-    username = forms.CharField(max_length=150)
-    password = forms.CharField(widget=forms.PasswordInput)
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'placeholder': 'Username'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'Password'})
+    )
+
 
 # Create your views here.
 class SignInView(FormView):
-
-    
     template_name = 'Sign_In.html'
     form_class = SignInForm
     success_url = '/home/'
-    
 
-    def _authenticate_user(self, username, password):
-        return Authentication.custom_authenticate(username, password)
-        
-        #login handler
-    def _handle_successful_login(self, user):
-        return User_Session_Manager.redirect_login(self.request, user,self.success_url)
-    
-        #failed login handler+Security measures using Login_Authentications.py
-    def _handle_failed_login(self,):
-        # messages and security handling for failed login such as brute force attacks TODO
-        Authentication.display_message(self.request, error=1)
- 
-    def Post_request(self):
-        username = self.request.POST.get('username')
-        password = self.request.POST.get('password')
-        return username, password
-    
     def form_valid(self, form):
         username = form.cleaned_data['username']
         password = form.cleaned_data['password']
 
         user = authenticate(self.request, username=username, password=password)
         if user:
-            login(self.request, user)
-            messages.success(self.request, f"Welcome back, {user.get_full_name()}!")
-            return redirect(self.success_url)
-
-        messages.error(self.request, "Invalid username or password")
-        return self.form_invalid(form)
-
+            # Use User_Session_Manager instead of repeating login + messages
+            return User_Session_Manager.redirect_login(
+                self.request, user, self.success_url
+            )
+        else:
+            messages.error(self.request, "Invalid username or password")
+            # Optional: here you could implement brute-force prevention
+            return self.form_invalid(form)
+        
+        
 def forgot_password(request):
     """
     GET: render forgot password form.
