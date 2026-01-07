@@ -1,30 +1,12 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db import connection
-from django.views import View
 from django.views.generic import FormView
 from django import forms
-from django.contrib.auth.hashers import check_password
 from .Login_Authentications import User_Session_Manager
 from django.contrib.auth import authenticate
-from .models import PasswordResetCode
-from django.utils import timezone
-import hashlib, os
-from datetime import timedelta
 from .User_Lockdown_Mangement import LockdownManagement
 from .Security_Config import SIGN_IN_CONFIG
-try:
-    # Optional: load .env if available
-    from dotenv import load_dotenv
-    load_dotenv()
-except Exception:
-    pass
-
-from email.message import EmailMessage
-import smtplib
-from django.conf import settings
 
 #ADI#
 from django.contrib.auth import update_session_auth_hash
@@ -32,18 +14,22 @@ from django.contrib.auth.decorators import login_required
 import json
 import re
 from django.conf import settings as dj_settings
+from .models import PasswordResetCode
+from django.utils import timezone
+import hashlib, os
+from datetime import timedelta
+from email.message import EmailMessage
+import smtplib
+from django.conf import settings
 
 class SignInForm(forms.Form):
-    username = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(attrs={'placeholder': 'Username'})
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'placeholder': 'Password'})
-    )
+   
+    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'placeholder': 'Username'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Password'}))
 
 
 class SignInView(FormView):
+
     template_name = 'Sign_In.html'
     form_class = SignInForm
     success_url = '/home/'
@@ -52,13 +38,11 @@ class SignInView(FormView):
         username = form.cleaned_data['username']
         password = form.cleaned_data['password']
 
-        # Try to get the user object first
         try:
             user_obj = User.objects.get(username=username)
         except User.DoesNotExist:
             user_obj = None
 
-        # Check lockout BEFORE authentication
         if user_obj and LockdownManagement.is_user_locked(user_obj):
             messages.error(
                 self.request,
@@ -66,7 +50,6 @@ class SignInView(FormView):
             )
             return self.form_invalid(form)
 
-        # Authenticate only if not locked
         user = authenticate(self.request, username=username, password=password)
 
         if user:
@@ -75,11 +58,11 @@ class SignInView(FormView):
                 self.request, user, self.success_url
             )
         else:
-            # Register failed attempt if user exists
+
             if user_obj:
                 LockdownManagement.register_failed_attempt(user_obj)
 
-            # Generic error message
+
             messages.error(self.request, "Invalid username or password")
             return self.form_invalid(form)
         
