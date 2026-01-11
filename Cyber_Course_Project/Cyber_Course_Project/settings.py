@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles', 'Cyber_Course_Project', 'Sign_Up', 'Sign_In', 'Sign_Out',
+    "Forgot_Password",
 ]
 
 MIDDLEWARE = [
@@ -157,3 +158,8 @@ SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
 SMTP_USE_TLS = os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
 FROM_EMAIL = os.getenv('FROM_EMAIL', 'no-reply@example.com')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+
+# Auth redirects so @login_required sends users to your custom Sign_In
+LOGIN_URL = 'Sign_In'                 # named URL for your sign-in view
+LOGIN_REDIRECT_URL = 'customer_system'  # after successful login
+LOGOUT_REDIRECT_URL = 'home'            # after logout

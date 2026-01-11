@@ -1,20 +1,18 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic.base import RedirectView
+
 from . views import home, customer_system, add_customer, customer_detail, edit_customer, delete_customer
-
-#ADI#
 from Sign_In import views as sign_in_views
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',home,name='home'),
-    path('home/',home,name='home'),
+    path('', home, name='home'),
+    path('home/', home, name='home'),
     path('Sign_Up/', include('Sign_Up.urls')),
     path('Sign_In/', include('Sign_In.urls')),
     path('Sign_Out/', include('Sign_Out.urls')),
-    
-    #ADI#
+
     path('change-password/', sign_in_views.change_password, name='change_password'),
 
     # Customer Management URLs
@@ -23,4 +21,10 @@ urlpatterns = [
     path('customers/<int:customer_id>/', customer_detail, name='customer_detail'),
     path('customers/<int:customer_id>/edit/', edit_customer, name='edit_customer'),
     path('customers/<int:customer_id>/delete/', delete_customer, name='delete_customer'),
+
+    # Forgot Password app (direct, no RedirectView shims)
+    path('Forgot_Password/', include('Forgot_Password.urls')),
+
+    # Keep only this legacy mapping for Django’s default login URL
+    path('accounts/login/', RedirectView.as_view(pattern_name='Sign_In', permanent=False)),
 ]
