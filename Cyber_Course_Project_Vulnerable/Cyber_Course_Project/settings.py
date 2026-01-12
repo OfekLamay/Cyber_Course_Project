@@ -42,7 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles', 'Cyber_Course_Project', 'Sign_Up', 'Sign_In', 'Sign_Out',
+    'django.contrib.staticfiles', 'Cyber_Course_Project', 'Sign_In',
+    'Sign_Up',
+    'Sign_Out',          # ensure present
+    'Forgot_Password',
 ]
 
 MIDDLEWARE = [

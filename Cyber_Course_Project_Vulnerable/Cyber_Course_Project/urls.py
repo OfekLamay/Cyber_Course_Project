@@ -10,10 +10,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('',home,name='home'),
     path('home/',home,name='home'),
-    path('Sign_Up/', include('Sign_Up.urls')),
     path('Sign_In/', include('Sign_In.urls')),
+    path('Sign_Up/', include('Sign_Up.urls')),
     path('Sign_Out/', include('Sign_Out.urls')),
-    
+    path('Forgot_Password/', include('Forgot_Password.urls')),
+
     #ADI#
     path('change-password/', sign_in_views.change_password, name='change_password'),
 
