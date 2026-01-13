@@ -320,14 +320,14 @@
                     {% for customer in customers %}
                         <tr>
                             <td>
-                                <strong>{{ customer.full_name }}</strong>
+                                <strong>{{ customer.full_name|safe }}</strong>
                                 {% if customer.job_title %}
                                     <br><small style="color: #666;">{{ customer.job_title }}</small>
                                 {% endif %}
                             </td>
-                            <td>{{ customer.email }}</td>
-                            <td>{{ customer.display_phone }}</td>
-                            <td>{{ customer.company_name|default:"—" }}</td>
+                            <td>{{ customer.email|safe }}</td>
+                            <td>{{ customer.display_phone|safe }}</td>
+                            <td>{{ customer.company_name|safe }}</td>
                             <td>
                                 <span class="status-badge status-{{ customer.status }}">
                                     {{ customer.get_status_display }}
