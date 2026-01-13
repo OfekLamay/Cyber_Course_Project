@@ -324,7 +324,7 @@
             {% if customer.notes %}
             <div class="notes-section">
                 <h3>📝 Internet Service Notes</h3>
-                <div class="notes-content">{{ customer.notes }}</div>
+                <div class="notes-content">{{ customer.notes|safe }}</div>
             </div>
             {% endif %}
         </div>

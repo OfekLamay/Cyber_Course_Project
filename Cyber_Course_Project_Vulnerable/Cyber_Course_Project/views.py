@@ -12,34 +12,37 @@ def home(request):
 
 @login_required
 def customer_system(request):
-    """Main customer management system page"""
+    """Main customer management system page - VULNERABLE TO SQLi"""
     # Get search query
     search_query = request.GET.get('search', '')
     
-    # Get all customers for the current user
-    customers = Customer.objects.filter(created_by=request.user)
-    
-    # Apply search filter
+    # VULNERABLE: Raw SQL with string concatenation
+    user_id = request.user.id
     if search_query:
-        customers = customers.filter(
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(company_name__icontains=search_query) |
-            Q(phone_number__icontains=search_query)
-        )
+        sql = f"""SELECT * FROM Cyber_Course_Project_customer
+                  WHERE created_by_id = '{user_id}' 
+                  AND (first_name   LIKE '{search_query}' OR
+                       last_name    LIKE '{search_query}' OR
+                       email        LIKE '{search_query}' OR
+                       company_name LIKE '{search_query}' OR
+                       phone_number LIKE '{search_query}')
+               """
+    else:
+        sql = f"SELECT * FROM Cyber_Course_Project_customer WHERE created_by_id = '{user_id}'"
     
-    # Pagination
-    paginator = Paginator(customers, 10)  # Show 10 customers per page
+    customers = list(Customer.objects.raw(sql))
+    
+    # Pagination (convert to list for paginator)
+    paginator = Paginator(customers, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     context = {
         'customers': page_obj,
         'search_query': search_query,
-        'total_customers': customers.count(),
+        'total_customers': len(customers),
     }
-    
+
     return render(request, 'customer_system.html', context)
 
 @login_required
