@@ -1,5 +1,5 @@
 from django.contrib import admin
-from Sign_In.models import PasswordResetCode
+from .models import PasswordResetCode
 
 @admin.register(PasswordResetCode)
 class PasswordResetCodeAdmin(admin.ModelAdmin):

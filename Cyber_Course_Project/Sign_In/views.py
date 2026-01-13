@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 import json
 import re
 from django.conf import settings as dj_settings
-from .models import PasswordResetCode
+from Forgot_Password.models import PasswordResetCode
 from django.utils import timezone
 import hashlib, os
 from datetime import timedelta

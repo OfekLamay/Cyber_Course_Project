@@ -10,7 +10,6 @@ class SendResetCodeForm(forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip()
-        # Don’t leak account existence to the UI; but validate format.
         return email
 
 class VerifyCodeForm(forms.Form):

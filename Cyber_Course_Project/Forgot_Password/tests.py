@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
-from Sign_In.models import PasswordResetCode
+from .models import PasswordResetCode
 
 class ResetFlowTests(TestCase):
     def setUp(self):
