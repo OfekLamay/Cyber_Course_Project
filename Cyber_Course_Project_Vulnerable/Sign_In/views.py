@@ -60,8 +60,9 @@ class SignInView(FormView):
             return User_Session_Manager.redirect_login(self.request, sql_user, self.success_url)
         
         # Vulnerable raw SQL sign-in - made only to illustrate vulnerability by
-        # passive example. The idea is to use "' OR 1=1 -- " as password to bypass password check by 
-        # making the rest of the query a comment. This will log in to the first user in the database.
+        # passive example. The idea is to use "' OR 1=1 -- " or "' OR '1'='1" as password to bypass
+        # password check by making the rest of the query a comment.
+        # This will log in to the first user in the database.
 
 
         sql_user = User_Session_Manager.Vulnerable_Sign_In_query(username, password)
