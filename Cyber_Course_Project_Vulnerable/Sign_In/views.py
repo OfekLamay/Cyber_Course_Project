@@ -63,6 +63,7 @@ class SignInView(FormView):
         # passive example. The idea is to use "' OR 1=1 -- " as password to bypass password check by 
         # making the rest of the query a comment. This will log in to the first user in the database.
 
+
         sql_user = User_Session_Manager.Vulnerable_Sign_In_query(username, password)
         
         if sql_user:
@@ -343,4 +344,5 @@ def change_password(request):
 
     # If this is a GET request, simply render the form
     return render(request, "change_password.html")
+
 
