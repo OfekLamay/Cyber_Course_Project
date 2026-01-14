@@ -53,7 +53,6 @@ SMTP_PASSWORD=your_app_password
 SMTP_USE_TLS=true
 FROM_EMAIL=security@example.com
 # Optional: used to build absolute links in emails
-FRONTEND_URL=http://127.0.0.1:8000
 ```
 
 The .env is kept out of Git.

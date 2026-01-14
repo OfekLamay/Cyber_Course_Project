@@ -157,7 +157,6 @@ SMTP_USERNAME = os.getenv('SMTP_USERNAME')
 SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
 SMTP_USE_TLS = os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
 FROM_EMAIL = os.getenv('FROM_EMAIL', 'no-reply@example.com')
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 
 # Auth redirects so @login_required sends users to your custom Sign_In
 LOGIN_URL = 'Sign_In'                 # named URL for your sign-in view

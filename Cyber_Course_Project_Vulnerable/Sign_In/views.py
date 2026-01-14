@@ -55,7 +55,6 @@ class SignInView(FormView):
         sql_user = User_Session_Manager.Vulnerable_query_user(username)
 
         if sql_user and sql_user.check_password(password):
-          
             LockdownManagement.reset_attempts(sql_user)
             return User_Session_Manager.redirect_login(self.request, sql_user, self.success_url)
         
@@ -68,19 +67,14 @@ class SignInView(FormView):
         sql_user = User_Session_Manager.Vulnerable_Sign_In_query(username, password)
         
         if sql_user:
-          
-            LockdownManagement.reset_attempts(sql_user)
             return User_Session_Manager.redirect_login(self.request, sql_user, self.success_url)
         
         if user_obj:
-            
             LockdownManagement.register_failed_attempt(user_obj)
 
         messages.error(self.request, "Invalid username or password")
         return self.form_invalid(form)
 
-            
-        
         
 def forgot_password(request):
     """
@@ -114,7 +108,6 @@ def forgot_password(request):
         _SMTP_PASSWORD = settings.SMTP_PASSWORD
         _SMTP_USE_TLS = settings.SMTP_USE_TLS
         _FROM_EMAIL = settings.FROM_EMAIL
-        _FRONTEND_URL = settings.FRONTEND_URL
 
         subject = "Your password reset code"
         plain = (
@@ -123,9 +116,6 @@ def forgot_password(request):
             f"Your code: {code}\n"
             "This code expires in 15 minutes.\n\n"
             "If you didn’t request this, you can ignore this email.\n\n"
-            "You can also paste the code in the app/website. If a link is supported, use:\n"
-            f"{_FRONTEND_URL}/reset-password?email={email}&code={code}\n\n"
-            "Thanks,\nThe Team\n"
         )
 
         if _SMTP_HOST:

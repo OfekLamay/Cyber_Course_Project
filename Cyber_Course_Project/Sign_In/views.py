@@ -99,7 +99,6 @@ def forgot_password(request):
         _SMTP_PASSWORD = settings.SMTP_PASSWORD
         _SMTP_USE_TLS = settings.SMTP_USE_TLS
         _FROM_EMAIL = settings.FROM_EMAIL
-        _FRONTEND_URL = settings.FRONTEND_URL
 
         subject = "Your password reset code"
         plain = (
@@ -108,9 +107,6 @@ def forgot_password(request):
             f"Your code: {code}\n"
             "This code expires in 15 minutes.\n\n"
             "If you didn’t request this, you can ignore this email.\n\n"
-            "You can also paste the code in the app/website. If a link is supported, use:\n"
-            f"{_FRONTEND_URL}/reset-password?email={email}&code={code}\n\n"
-            "Thanks,\nThe Team\n"
         )
 
         if _SMTP_HOST:

@@ -48,7 +48,6 @@ def forgot_password(request):
         _SMTP_PASSWORD = getattr(dj_settings, 'SMTP_PASSWORD', None)
         _SMTP_USE_TLS = getattr(dj_settings, 'SMTP_USE_TLS', True)
         _FROM_EMAIL = getattr(dj_settings, 'FROM_EMAIL', 'no-reply@example.com')
-        _FRONTEND_URL = getattr(dj_settings, 'FRONTEND_URL', 'http://127.0.0.1:8000/Forgot_Password')
 
         subject = "Your password reset code"
         plain = (

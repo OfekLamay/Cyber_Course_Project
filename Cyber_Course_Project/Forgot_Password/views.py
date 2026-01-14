@@ -50,10 +50,6 @@ def forgot_password(request):
                         user=user, code=code, created_at=timezone.now(), used=False
                     )
 
-                    base = getattr(settings, "FRONTEND_URL", "")
-                    reset_link = f"{base}/Sign_In/reset-password/?email={email}&code={code}" if base else \
-                                  f"/Forgot_Password/reset-password/?email={email}&code={code}"
-
                     body = (
                         "You requested a password reset.\n\n"
                         f"Code: {code}\n"
