@@ -12,7 +12,9 @@ import smtplib
 import hashlib
 from datetime import timedelta
 
-from Sign_In.models import PasswordResetCode  # uses existing model
+from Sign_In.models import PasswordResetCode  
+
+RESET_TTL_MINUTES = 15
 
 def forgot_password(request):
     """
@@ -50,14 +52,9 @@ def forgot_password(request):
 
         subject = "Your password reset code"
         plain = (
-            "Hi,\n\n"
-            "We received a request to reset the password for your account.\n\n"
-            f"Your code: {code}\n"
-            "This code expires in 15 minutes.\n\n"
-            "If you didn’t request this, you can ignore this email.\n\n"
-            "You can also paste the code in the website. Reset link (if supported):\n"
-            f"{_FRONTEND_URL}/reset-password?email={email}&code={code}\n\n"
-            "Thanks,\nThe Team\n"
+            "You requested a password reset.\n\n"
+            f"Code: {code}\n"
+            f"This code expires in {RESET_TTL_MINUTES} minutes.\n\n"
         )
 
         if _SMTP_HOST:

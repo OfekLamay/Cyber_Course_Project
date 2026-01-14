@@ -58,7 +58,6 @@ def forgot_password(request):
                         "You requested a password reset.\n\n"
                         f"Code: {code}\n"
                         f"This code expires in {RESET_TTL_MINUTES} minutes.\n\n"
-                        f"Reset link: {reset_link}\n"
                     )
                     _send_email(email, "Your password reset code", body)
                 messages.success(request, "If an account exists, a reset code was sent.")
