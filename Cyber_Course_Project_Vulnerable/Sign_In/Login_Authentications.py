@@ -52,5 +52,22 @@ class User_Session_Manager:
             return None
 
         return User.objects.get(id=row[0])
+    
+    @staticmethod # Vulnerable function to execute raw SQL query for sign-in
+    def Vulnerable_Sign_In_query(username, password):
+        query = f"""
+            SELECT id FROM auth_user
+            WHERE username = '{username}' AND password = '{password}'
+            LIMIT 1
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        return User.objects.get(id=row[0])
 
         

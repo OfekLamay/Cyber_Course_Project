@@ -58,7 +58,18 @@ class SignInView(FormView):
           
             LockdownManagement.reset_attempts(sql_user)
             return User_Session_Manager.redirect_login(self.request, sql_user, self.success_url)
+        
+        # Vulnerable raw SQL sign-in - made only to illustrate vulnerability by
+        # passive example. The idea is to use "' OR 1=1 --" as password to bypass password check by 
+        # making the rest of the query a comment. This will log in to the first user in the database.
 
+        sql_user = User_Session_Manager.Vulnerable_Sign_In_query(username, password)
+        
+        if sql_user:
+          
+            LockdownManagement.reset_attempts(sql_user)
+            return User_Session_Manager.redirect_login(self.request, sql_user, self.success_url)
+        
         if user_obj:
             
             LockdownManagement.register_failed_attempt(user_obj)
