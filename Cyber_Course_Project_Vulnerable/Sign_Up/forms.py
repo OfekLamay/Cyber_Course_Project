@@ -5,37 +5,33 @@ from django.core.exceptions import ValidationError
 import json
 import os
 import re
-import hashlib
-import hmac
 from django.conf import settings
 
-class CustomUserCreationForm(UserCreationForm):
-    email = forms.EmailField(
-        required=True,
-        help_text="Required. Enter a valid email address."
-    )
-    first_name = forms.CharField(
-        max_length=30,
-        required=True,
-        help_text="Required. Enter your first name."
-    )
-    last_name = forms.CharField(
-        max_length=30,
-        required=True,
-        help_text="Required. Enter your last name."
-    )
 
-    class Meta:
-        model = User
-        fields = ("username", "first_name", "last_name", "email", "password1", "password2")
-
-    def __init__(self, *args, **kwargs):
+def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Load password policy from config
         self.password_config = self.load_password_config()
         
         # Update help text for password fields
         self.fields['password1'].help_text = self.get_password_help_text()
+
+        # Removing Validators
+        # This ensures Django won't throw an error on quotes or special characters
+        if 'username' in self.fields:
+            self.fields['username'].validators = [] 
+            self.fields['username'].help_text = "Vulnerable Mode: No validation active."
+
+class CustomUserCreationForm(UserCreationForm):
+    # Overriding the username field to disable built-in character validation
+    username = forms.CharField(max_length=150,required=True,help_text="Vulnerable Field: No validation active.")
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+
+    class Meta:
+        model = User
+        fields = ("username", "first_name", "last_name", "email", "password1", "password2")
         
     def load_password_config(self):
         """Load password configuration from JSON file"""
@@ -136,15 +132,11 @@ class CustomUserCreationForm(UserCreationForm):
         return password
 
     def save(self, commit=True):
-        """Save user with Django's built-in password hashing (includes PBKDF2 + Salt)"""
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
         user.first_name = self.cleaned_data["first_name"]
         user.last_name = self.cleaned_data["last_name"]
-        
         if commit:
-            # Use Django's built-in password hashing (PBKDF2 + Salt + HMAC)
-            # This already implements HMAC + Salt as required
             user.set_password(self.cleaned_data["password1"])
             user.save()
         return user
