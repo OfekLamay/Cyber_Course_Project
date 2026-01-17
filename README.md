@@ -52,7 +52,6 @@ SMTP_USERNAME=your_email@example.com
 SMTP_PASSWORD=your_app_password
 SMTP_USE_TLS=true
 FROM_EMAIL=security@example.com
-# Optional: used to build absolute links in emails
 ```
 
 The .env is kept out of Git.
