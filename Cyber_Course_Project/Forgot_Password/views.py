@@ -1,14 +1,19 @@
+import os
+import hashlib
+import smtplib
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
 from email.message import EmailMessage
-import smtplib, os, hashlib
 
 from .forms import SendResetCodeForm, VerifyCodeForm, ResetPasswordForm
 from django.contrib.auth.models import User
-from Sign_In.models import PasswordResetCode  # reuse existing model
+from Sign_In.models import PasswordResetCode
+
+from Cyber_Course_Project.password_history import is_recent_password, record_password_hash  # NEW
 
 RESET_TTL_MINUTES = 15
 
@@ -116,18 +121,25 @@ def reset_password(request):
                 messages.error(request, "This reset code has expired.")
                 return redirect("Forgot_Password:reset_password")
 
+            # Block reuse of last N
+            if is_recent_password(user, new_password):
+                messages.error(request, "You cannot reuse one of your most recent passwords.")
+                return render(request, "reset_password.html", {"form": form})
+
+            # Record current hash before changing
+            old_hash = user.password
+
             user.set_password(new_password)
             user.save()
-            token.used = True
-            token.save(update_fields=["used"])
-            messages.success(request, "Password has been reset. Please sign in.")
-            return redirect("/Sign_In/")
-        # invalid form -> show errors
-        return render(request, "reset_password.html", {"form": form})
 
-    # GET: prefill email/code from query params
-    initial = {
-        "email": request.GET.get("email", ""),
-        "code": request.GET.get("code", ""),
-    }
-    return render(request, "reset_password.html", {"form": ResetPasswordForm(initial=initial)})
+            # Save old password hash into history, prune to N
+            if old_hash:
+                record_password_hash(user, old_hash)
+
+            messages.success(request, "Password updated successfully.")
+            return redirect("Sign_In")
+
+    else:
+        form = ResetPasswordForm()
+
+    return render(request, "reset_password.html", {"form": form})
