@@ -1,166 +1,159 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.conf import settings as dj_settings
-from django.utils import timezone
-from django.contrib.auth.models import User
-from django.db import transaction
-from email.message import EmailMessage
-from django.urls import reverse
-
 import os
-import smtplib
 import hashlib
+import smtplib
 from datetime import timedelta
+from email.message import EmailMessage
 
-from Sign_In.models import PasswordResetCode  
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
+from django.utils import timezone
+
+from .forms import SendResetCodeForm, VerifyCodeForm, ResetPasswordForm
+from Sign_In.models import PasswordResetCode
+from Cyber_Course_Project.password_history import is_recent_password, record_password_hash
 
 RESET_TTL_MINUTES = 15
 
+
+def _send_email(to_email: str, subject: str, body: str) -> None:
+    host = settings.SMTP_HOST
+    port = int(getattr(settings, "SMTP_PORT", 587))
+    user = getattr(settings, "SMTP_USERNAME", None)
+    pwd = getattr(settings, "SMTP_PASSWORD", None)
+    use_tls = str(getattr(settings, "SMTP_USE_TLS", "true")).lower() == "true"
+    sender = getattr(settings, "FROM_EMAIL", user or "no-reply@example.com")
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to_email
+    msg.set_content(body)
+
+    with smtplib.SMTP(host, port, timeout=10) as s:
+        if use_tls:
+            s.starttls()
+        if user and pwd:
+            s.login(user, pwd)
+        s.send_message(msg)
+
+
 def forgot_password(request):
-    """
-    GET: render forgot form
-    POST: generate code (SHA-1), store, send email (15 min validity)
-    """
     if request.method == "POST":
-        email = request.POST.get("email", "").strip()
-        if not email:
-            messages.error(request, "Please enter your account email.")
-            return render(request, 'forgot_password.html')
+        form = SendResetCodeForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["email"]
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            # do not reveal existence
-            messages.success(request, "If an account exists, a reset code was sent.")
-            return render(request, 'forgot_password.html')
-
-        # generate SHA-1 code
-        salt = os.urandom(16)
-        payload = f"{user.username}:{timezone.now().timestamp()}".encode() + salt
-        code = hashlib.sha1(payload).hexdigest()
-
-        PasswordResetCode.objects.create(user=user, code=code)
-
-        # SMTP settings (compatible with existing settings)
-        _SMTP_HOST = getattr(dj_settings, 'SMTP_HOST', None)
-        _SMTP_PORT = getattr(dj_settings, 'SMTP_PORT', 587)
-        _SMTP_USERNAME = getattr(dj_settings, 'SMTP_USERNAME', None)
-        _SMTP_PASSWORD = getattr(dj_settings, 'SMTP_PASSWORD', None)
-        _SMTP_USE_TLS = getattr(dj_settings, 'SMTP_USE_TLS', True)
-        _FROM_EMAIL = getattr(dj_settings, 'FROM_EMAIL', 'no-reply@example.com')
-
-        subject = "Your password reset code"
-        plain = (
-            "You requested a password reset.\n\n"
-            f"Code: {code}\n"
-            f"This code expires in {RESET_TTL_MINUTES} minutes.\n\n"
-        )
-
-        if _SMTP_HOST:
             try:
-                msg = EmailMessage()
-                msg["Subject"] = subject
-                msg["From"] = _FROM_EMAIL
-                msg["To"] = email
-                msg.set_content(plain)
+                user = User.objects.filter(email=email).first()
+                if user:
+                    rand = os.urandom(16)
+                    seed = f"{email}|{timezone.now().timestamp()}".encode("utf-8") + rand
+                    code = hashlib.sha1(seed).hexdigest()
 
-                with smtplib.SMTP(_SMTP_HOST, _SMTP_PORT) as server:
-                    if _SMTP_USE_TLS:
-                        server.starttls()
-                    if _SMTP_USERNAME and _SMTP_PASSWORD:
-                        server.login(_SMTP_USERNAME, _SMTP_PASSWORD)
-                    server.send_message(msg)
+                    PasswordResetCode.objects.create(user=user, code=code, used=False)
+
+                    body = (
+                        "You requested a password reset.\n\n"
+                        f"Code: {code}\n"
+                        f"This code expires in {RESET_TTL_MINUTES} minutes.\n\n"
+                    )
+                    _send_email(email, "Your password reset code", body)
+
+                messages.success(request, "If an account exists, a reset code was sent.")
             except Exception as e:
                 messages.error(request, f"Failed to send email: {e}")
-                return render(request, 'forgot_password.html')
+        else:
+            messages.error(request, "Please enter a valid email.")
+        return redirect("Forgot_Password:forgot_password")
 
-        messages.success(request, "If an account exists, a reset code was sent.")
-        return render(request, 'forgot_password.html')
-
-    return render(request, 'forgot_password.html')
+    return render(
+        request,
+        "forgot_password.html",
+        {"send_form": SendResetCodeForm(), "verify_form": VerifyCodeForm()},
+    )
 
 
 def verify_code(request):
-    """
-    POST: validate email+code, ensure not used and <15 min old; redirect to reset-password
-    """
-    if request.method != "POST":
-        return redirect('/Forgot_Password/forgot-password/')
+    if request.method == "POST":
+        form = VerifyCodeForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+            code = form.cleaned_data["code"]
 
-    email = request.POST.get("email", "").strip()
-    code = request.POST.get("code", "").strip()
+            user = User.objects.filter(email=email).first()
+            if not user:
+                messages.error(request, "Invalid email or code.")
+                return redirect("Forgot_Password:forgot_password")
 
-    if not (email and code):
-        messages.error(request, "Email and code are required.")
-        return render(request, 'forgot_password.html')
+            token = PasswordResetCode.objects.filter(user=user, code=code, used=False).first()
+            if not token:
+                messages.error(request, "Invalid or already used code.")
+                return redirect("Forgot_Password:forgot_password")
 
-    try:
-        user = User.objects.get(email=email)
-    except User.DoesNotExist:
-        messages.error(request, "Invalid email or code.")
-        return render(request, 'forgot_password.html')
+            if timezone.now() - token.created_at > timedelta(minutes=RESET_TTL_MINUTES):
+                messages.error(request, "This reset code has expired.")
+                return redirect("Forgot_Password:forgot_password")
 
-    try:
-        token = PasswordResetCode.objects.filter(user=user, code=code, used=False).latest('created_at')
-    except PasswordResetCode.DoesNotExist:
-        messages.error(request, "Invalid email or code.")
-        return render(request, 'forgot_password.html')
+            return redirect(f"/Forgot_Password/reset-password/?email={email}&code={code}")
 
-    if token.created_at < timezone.now() - timedelta(minutes=15):
-        messages.error(request, "This code has expired. Please request a new one.")
-        return render(request, 'forgot_password.html')
+        messages.error(request, "Please enter a valid email and code.")
+        return redirect("Forgot_Password:forgot_password")
 
-    # ok, redirect with params
-    url = reverse('Forgot_Password:reset_password')
-    return redirect(f"{url}?email={email}&code={code}")
+    return redirect("Forgot_Password:forgot_password")
 
 
 def reset_password(request):
-    """
-    GET: render reset form (prefill from query)
-    POST: validate code and set new password
-    Note: keep minimal checks to avoid changing other vulnerabilities.
-    """
     if request.method == "POST":
-        email = request.POST.get("email", "").strip()
-        code = request.POST.get("code", "").strip()
-        new_password = request.POST.get("new_password", "")
-        confirm_password = request.POST.get("confirm_password", "")
+        form = ResetPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+            code = form.cleaned_data["code"]
+            new_password = form.cleaned_data["new_password"]
 
-        if not (email and code and new_password and confirm_password):
-            messages.error(request, "All fields are required.")
-            return render(request, 'reset_password.html')
+            user = User.objects.filter(email=email).first()
+            if not user:
+                messages.error(request, "Invalid email or code.")
+                return redirect("Forgot_Password:reset_password")
 
-        if new_password != confirm_password:
-            messages.error(request, "Passwords do not match.")
-            return render(request, 'reset_password.html')
+            token = PasswordResetCode.objects.filter(user=user, code=code, used=False).first()
+            if not token:
+                messages.error(request, "Invalid or already used code.")
+                return redirect("Forgot_Password:reset_password")
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            messages.error(request, "Invalid email or code.")
-            return render(request, 'reset_password.html')
+            if timezone.now() - token.created_at > timedelta(minutes=RESET_TTL_MINUTES):
+                messages.error(request, "This reset code has expired.")
+                return redirect("Forgot_Password:reset_password")
 
-        try:
-            token = PasswordResetCode.objects.filter(user=user, code=code, used=False).latest('created_at')
-        except PasswordResetCode.DoesNotExist:
-            messages.error(request, "Invalid email or code.")
-            return render(request, 'reset_password.html')
+            # Password history enforcement (N from JSON)
+            if is_recent_password(user, new_password):
+                messages.error(request, "You cannot reuse one of your most recent passwords.")
+                return render(request, "reset_password.html", {"form": form})
 
-        if token.created_at < timezone.now() - timedelta(minutes=15):
-            messages.error(request, "This code has expired. Please request a new one.")
-            return render(request, 'reset_password.html')
-
-        with transaction.atomic():
+            old_hash = user.password
             user.set_password(new_password)
-            user.save(update_fields=['password'])
+            user.save()
+
+            # Persist old hash in history + prune
+            if old_hash:
+                record_password_hash(user, old_hash)
+
             token.used = True
-            token.save(update_fields=['used'])
+            token.save(update_fields=["used"])
 
-        messages.success(request, "Your password has been updated. You may now sign in.")
-        return redirect('/Sign_In/')
+            messages.success(request, "Password updated successfully.")
+            return redirect("Sign_In")
 
-    # GET
-    prefill_email = request.GET.get("email", "")
-    prefill_code = request.GET.get("code", "")
-    return render(request, 'reset_password.html', {"prefill_email": prefill_email, "prefill_code": prefill_code})
+        for field, errs in form.errors.items():
+            for err in errs:
+                messages.error(request, str(err))
+
+        return render(request, "reset_password.html", {"form": form})
+
+    else:
+        # Prefill email/code from querystring if provided
+        initial = {"email": request.GET.get("email", ""), "code": request.GET.get("code", "")}
+        form = ResetPasswordForm(initial=initial)
+
+    return render(request, "reset_password.html", {"form": form})
