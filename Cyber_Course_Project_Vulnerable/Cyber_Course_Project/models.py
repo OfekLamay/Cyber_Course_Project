@@ -132,10 +132,14 @@ class Customer(models.Model):
     @property
     def display_phone(self):
         """Format phone number for display"""
+        if self.phone_number is None:
+            return ""
+            
         if self.phone_number:
             # Simple formatting for display
-            phone = self.phone_number.replace('+', '').replace('-', '').replace(' ', '')
-            if len(phone) == 10:
+            phone =str(self.phone_number)
+            phone = phone.replace('+', '').replace('-', '').replace(' ', '')
+            if phone.isdigit() and len(phone) == 10:
                 return f"{phone[:3]}-{phone[3:6]}-{phone[6:]}"
-            return self.phone_number
-        return ""
+            
+        return phone
