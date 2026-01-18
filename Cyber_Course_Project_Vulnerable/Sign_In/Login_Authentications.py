@@ -5,11 +5,7 @@ from django.db import connection
 from django.contrib.auth.models import User
 
 class User_Session_Manager:
-    """
-    This class manages user sessions and related messages.
-    TODO: Expand with more session management features as needed. 
-    Such as session timeout, redirection, welcome messages, session tracking, etc.
-    """
+
     @staticmethod
     def _create_welcome_message(user_obj):
         return f'Welcome back, {user_obj.get_full_name()}!'
@@ -30,14 +26,14 @@ class User_Session_Manager:
             messages.error(request, 'Please enter both username and password.')
 
 
-    @staticmethod# Function to extract username and password from POST request
+    @staticmethod
     def request_Post(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         return username, password
 
 
-    @staticmethod# Vulnerable function to execute raw SQL query
+    @staticmethod
     def Vulnerable_query_user(username):
         query = f"""
             SELECT id FROM auth_user
@@ -53,7 +49,7 @@ class User_Session_Manager:
 
         return User.objects.get(id=row[0])
     
-    @staticmethod # Vulnerable function to execute raw SQL query for sign-in
+    @staticmethod
     def Vulnerable_Sign_In_query(username, password):
         query = f"""
             SELECT id FROM auth_user

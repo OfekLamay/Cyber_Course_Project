@@ -30,20 +30,17 @@ class LockdownManagement:
             "locked_until": None
         })
 
-        # Enforce attempt window from config
         window_seconds = SIGN_IN_CONFIG["attempt_window_seconds"]
         if now - data["first_attempt"] > timedelta(seconds=window_seconds):
             data["attempts"] = 0
             data["first_attempt"] = now
             data["locked_until"] = None
 
-        # 🚫 Prevent exceeding configured attempts
         if data["attempts"] >= SIGN_IN_CONFIG["max_attempts"]:
             return
 
         data["attempts"] += 1
 
-        # Lock user when limit is reached
         if data["attempts"] == SIGN_IN_CONFIG["max_attempts"]:
             data["locked_until"] = now + timedelta(
                 seconds=SIGN_IN_CONFIG["lockout_duration_seconds"]
