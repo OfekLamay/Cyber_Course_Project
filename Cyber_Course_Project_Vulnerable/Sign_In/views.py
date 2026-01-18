@@ -9,9 +9,7 @@ from .User_Lockdown_Mangement import LockdownManagement
 from .Security_Config import SIGN_IN_CONFIG
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-import json
 import re
-from django.conf import settings as dj_settings
 from .models import PasswordResetCode
 from django.utils import timezone
 import hashlib, os
@@ -20,6 +18,9 @@ from email.message import EmailMessage
 import smtplib
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+
+from Cyber_Course_Project.password_policy import load_password_policy
+from Cyber_Course_Project.password_history import is_recent_password, record_password_hash
 
 class SignInForm(forms.Form):
    
@@ -140,66 +141,55 @@ def forgot_password(request):
     return render(request, 'forgot_password.html')
 
 
+def _validate_against_policy(pw: str) -> list[str]:
+    """
+    Shared validator for reset-password + change-password.
+    Returns a list of human-readable errors (for messages.error()).
+    """
+    p = load_password_policy()
+    errs: list[str] = []
+
+    # Length
+    if len(pw) < p.min_length:
+        errs.append(f"Password must be at least {p.min_length} characters long.")
+    if len(pw) > p.max_length:
+        errs.append(f"Password must be no more than {p.max_length} characters long.")
+
+    # Counts
+    upper = len(re.findall(r"[A-Z]", pw))
+    lower = len(re.findall(r"[a-z]", pw))
+    digits = len(re.findall(r"\d", pw))
+    special = len(re.findall(r"[" + re.escape(p.special_chars) + r"]", pw))
+
+    if p.require_uppercase and upper < p.min_uppercase:
+        errs.append(f"Password must contain at least {p.min_uppercase} uppercase letter(s).")
+    if p.require_lowercase and lower < p.min_lowercase:
+        errs.append(f"Password must contain at least {p.min_lowercase} lowercase letter(s).")
+    if p.require_digits and digits < p.min_digits:
+        errs.append(f"Password must contain at least {p.min_digits} digit(s).")
+    if p.require_special_chars and special < p.min_special_chars:
+        errs.append(
+            f"Password must contain at least {p.min_special_chars} special character(s) from: {p.special_chars}"
+        )
+
+    # Forbidden patterns (include which one matched)
+    for pat in p.forbidden_patterns:
+        if isinstance(pat, str) and pat and pat.lower() in pw.lower():
+            errs.append(f"Password cannot contain the forbidden pattern: '{pat}'.")
+
+    # Repeated characters in a row (if max=2 => forbid 3+ in a row)
+    if re.search(r"(.)\1{" + str(p.max_repeated_chars) + r",}", pw):
+        errs.append(f"Password cannot contain more than {p.max_repeated_chars} repeated characters in a row.")
+
+    return errs
+
+
 def reset_password(request):
     """
     GET: render form to submit email, code, and new password.
     POST: validate code not used and not expired (15 minutes); set new password.
+    Uses JSON-driven policy + password history.
     """
-    def _load_password_config():
-        try:
-            config_path = os.path.join(dj_settings.BASE_DIR, 'config', 'password_config.json')
-            with open(config_path, 'r') as f:
-                return json.load(f)
-        except Exception:
-            return {
-                "password_policy": {
-                    "min_length": 8,
-                    "max_length": 128,
-                    "require_uppercase": True,
-                    "require_lowercase": True,
-                    "require_digits": True,
-                    "require_special_chars": True,
-                    "special_chars": "!@#$%^&*()_+-=[]{}|;:,.<>?",
-                    "forbidden_patterns": [],
-                    "max_repeated_chars": 2,
-                }
-            }
-
-    def _validate_password_policy(password: str):
-        cfg = _load_password_config()
-        policy = cfg.get('password_policy', {})
-        errors = []
-
-        min_length = policy.get('min_length', 8)
-        max_length = policy.get('max_length', 128)
-        if len(password) < min_length:
-            errors.append(f"Password must be at least {min_length} characters long.")
-        if len(password) > max_length:
-            errors.append(f"Password must be no more than {max_length} characters long.")
-
-        if policy.get('require_uppercase') and not re.search(r'[A-Z]', password):
-            errors.append("Password must contain at least one uppercase letter.")
-        if policy.get('require_lowercase') and not re.search(r'[a-z]', password):
-            errors.append("Password must contain at least one lowercase letter.")
-        if policy.get('require_digits') and not re.search(r'[0-9]', password):
-            errors.append("Password must contain at least one digit.")
-
-        if policy.get('require_special_chars'):
-            special_chars = policy.get('special_chars', '!@#$%^&*()_+-=[]{}|;:,.<>?')
-            if not re.search(f'[{re.escape(special_chars)}]', password):
-                errors.append(f"Password must contain at least one special character: {special_chars}")
-
-        for pattern in policy.get('forbidden_patterns', []):
-            if pattern.lower() in password.lower():
-                errors.append(f"Password cannot contain common pattern: {pattern}")
-
-        max_repeated = policy.get('max_repeated_chars', 2)
-        for i in range(len(password) - max_repeated):
-            if len(set(password[i:i+max_repeated+1])) == 1:
-                errors.append(f"Password cannot have more than {max_repeated} repeated characters in a row.")
-
-        return errors
-
     if request.method == "POST":
         email = request.POST.get("email", "").strip()
         code = request.POST.get("code", "").strip()
@@ -214,8 +204,8 @@ def reset_password(request):
             messages.error(request, "Passwords do not match.")
             return render(request, 'reset_password.html')
 
-        # Validate password against config policy
-        policy_errors = _validate_password_policy(new_password)
+        # Policy validation (JSON-driven)
+        policy_errors = _validate_against_policy(new_password)
         if policy_errors:
             for err in policy_errors:
                 messages.error(request, err)
@@ -233,20 +223,28 @@ def reset_password(request):
             messages.error(request, "Invalid email or code.")
             return render(request, 'reset_password.html')
 
-        # Check expiry: 15 minutes
         if timezone.now() - token.created_at > timedelta(minutes=15):
             messages.error(request, "This reset code has expired.")
             return render(request, 'reset_password.html')
 
-        # Set new password securely
+        # Password history enforcement (N from JSON)
+        if is_recent_password(user, new_password):
+            messages.error(request, "You cannot reuse one of your most recent passwords.")
+            return render(request, 'reset_password.html')
+
+        old_hash = user.password
         user.set_password(new_password)
         user.save()
+
+        if old_hash:
+            record_password_hash(user, old_hash)
+
         token.used = True
         token.save(update_fields=["used"])
 
         messages.success(request, "Password has been reset. Please sign in.")
         return redirect('/Sign_In/')
-    # GET: optionally prefill email/code from query string
+
     prefill_email = request.GET.get("email", "")
     prefill_code = request.GET.get("code", "")
     return render(request, 'reset_password.html', {"prefill_email": prefill_email, "prefill_code": prefill_code})
@@ -290,58 +288,45 @@ def verify_code(request):
 @login_required
 def change_password(request):
     """
-    Handles Change Password with strict policy validation (Backend).
+    Change Password using the same JSON policy + password history rules.
     """
     if request.method == "POST":
-        current_password = request.POST.get("current_password")
-        new_password = request.POST.get("new_password")
-        confirm_password = request.POST.get("confirm_password")
+        current_password = request.POST.get("current_password") or ""
+        new_password = request.POST.get("new_password") or ""
+        confirm_password = request.POST.get("confirm_password") or ""
 
-        
         if not current_password or not new_password or not confirm_password:
             messages.error(request, "All fields are required.")
             return render(request, "change_password.html")
 
-        
         user = request.user
         if not user.check_password(current_password):
             messages.error(request, "Current password is incorrect.")
             return render(request, "change_password.html")
 
-       
         if new_password != confirm_password:
             messages.error(request, "New password and confirmation do not match.")
             return render(request, "change_password.html")
 
-        
-        errors = []
-        
-        if len(new_password) < 8:
-            errors.append("Password must be at least 8 characters long.")
-        
-        if not re.search(r'[A-Z]', new_password):
-            errors.append("Password must contain at least one uppercase letter (A-Z).")
-        
-        if not re.search(r'[a-z]', new_password):
-            errors.append("Password must contain at least one lowercase letter (a-z).")
-        
-        if not re.search(r'[0-9]', new_password):
-            errors.append("Password must contain at least one digit (0-9).")
-       
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>+=\[\]\\/_-]', new_password):
-            errors.append("Password must contain at least one special character (!@#$%^&*).")
-
-        if errors:
-            for err in errors:
+        # Policy validation (JSON-driven)
+        policy_errors = _validate_against_policy(new_password)
+        if policy_errors:
+            for err in policy_errors:
                 messages.error(request, err)
             return render(request, "change_password.html")
-        
 
-        
+        # Password history validation (JSON-driven)
+        if is_recent_password(user, new_password):
+            messages.error(request, "You cannot reuse one of your most recent passwords.")
+            return render(request, "change_password.html")
+
+        old_hash = user.password
         user.set_password(new_password)
         user.save()
 
-       
+        if old_hash:
+            record_password_hash(user, old_hash)
+
         update_session_auth_hash(request, user)
         messages.success(request, "Password changed successfully.")
         return render(request, "change_password.html")
