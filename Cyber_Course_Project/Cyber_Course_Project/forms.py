@@ -2,65 +2,6 @@ from django import forms
 from .models import Customer
 
 class CustomerForm(forms.ModelForm):
-    """
-    Form for creating and editing customer records
-    """
-    
-    class Meta:
-        model = Customer
-        fields = [
-            'first_name', 'last_name', 'email', 'phone_number',
-            'address', 'city', 'country', 'company_name', 
-            'job_title', 'status', 'notes'
-        ]
-        
-        widgets = {
-            'first_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter first name',
-            }),
-            'last_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter last name',
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'customer@example.com',
-            }),
-            'phone_number': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '+972-50-1234567',
-            }),
-            'address': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Enter full address',
-            }),
-            'city': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter city',
-            }),
-            'country': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter country',
-            }),
-            'company_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter company name (optional)',
-            }),
-            'job_title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter job title (optional)',
-            }),
-            'status': forms.Select(attrs={
-                'class': 'form-control',
-            }),
-            'notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Additional notes about the customer...',
-            }),
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -120,3 +61,59 @@ class CustomerForm(forms.ModelForm):
             customer.save()
             
         return customer
+        
+    class Meta:
+        model = Customer
+        fields = [
+            'first_name', 'last_name', 'email', 'phone_number',
+            'address', 'city', 'country', 'company_name', 
+            'job_title', 'status', 'notes'
+        ]
+        
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter first name',
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter last name',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'customer@example.com',
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+972-50-1234567',
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Enter full address',
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter city',
+            }),
+            'country': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter country',
+            }),
+            'company_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter company name (optional)',
+            }),
+            'job_title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter job title (optional)',
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Additional notes about the customer...',
+            }),
+        }

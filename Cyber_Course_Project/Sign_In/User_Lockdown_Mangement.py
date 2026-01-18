@@ -30,7 +30,6 @@ class LockdownManagement:
             "locked_until": None
         })
 
-        # Enforce attempt window from config
         window_seconds = SIGN_IN_CONFIG["attempt_window_seconds"]
         if now - data["first_attempt"] > timedelta(seconds=window_seconds):
             data["attempts"] = 0

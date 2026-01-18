@@ -8,7 +8,15 @@ import re
 from django.conf import settings
 
 
-def __init__(self, *args, **kwargs):
+class CustomUserCreationForm(UserCreationForm):
+    # Overriding the username field to disable built-in character validation
+    username = forms.CharField(max_length=150,required=True,help_text="Vulnerable Field: No validation active.")
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Load password policy from config
         self.password_config = self.load_password_config()
@@ -22,35 +30,15 @@ def __init__(self, *args, **kwargs):
             self.fields['username'].validators = [] 
             self.fields['username'].help_text = "Vulnerable Mode: No validation active."
 
-class CustomUserCreationForm(UserCreationForm):
-    # Overriding the username field to disable built-in character validation
-    username = forms.CharField(max_length=150,required=True,help_text="Vulnerable Field: No validation active.")
-    email = forms.EmailField(required=True)
-    first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
-
     class Meta:
         model = User
         fields = ("username", "first_name", "last_name", "email", "password1", "password2")
         
     def load_password_config(self):
         """Load password configuration from JSON file"""
-        try:
-            config_path = os.path.join(settings.BASE_DIR, 'config', 'password_config.json')
-            with open(config_path, 'r') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            # Default config if file not found
-            return {
-                "password_policy": {
-                    "min_length": 8,
-                    "require_uppercase": True,
-                    "require_lowercase": True,
-                    "require_digits": True,
-                    "require_special_chars": True,
-                    "special_chars": "!@#$%^&*()_+-=[]{}|;:,.<>?",
-                }
-            }
+        config_path = os.path.join(settings.BASE_DIR,'Cyber_Course_Project','config','password_config.json')
+        with open(config_path, 'r') as f:
+            return json.load(f)
     
     def get_password_help_text(self):
         """Generate help text based on password policy"""

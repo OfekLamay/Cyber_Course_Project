@@ -13,28 +13,14 @@ try:
 except KeyError as e:
     raise ImproperlyConfigured(f"Missing required sign-in configuration: {e}")
 
-# -----------------------
-# Enforce storage policy
-# -----------------------
 storage_policy = SIGN_IN_CONFIG.get("storage_policy", {})
 
-# Decide whether in-memory storage is allowed
 FORBID_IN_MEMORY_STORAGE = not storage_policy.get("allow_in_memory", True)
 
-# Choose backend
-required_backend = storage_policy.get("required_backend", "cache")  # default to cache
+required_backend = storage_policy.get("required_backend", "cache")  
 if required_backend not in ("cache", "database", "file"):
     raise ImproperlyConfigured(
         f"Invalid sign-in storage backend '{required_backend}'. "
         "Supported options are: 'cache', 'database', 'file'."
     )
-
-# Optional: warn if in-memory storage is allowed but you want cache
-if not FORBID_IN_MEMORY_STORAGE and required_backend != "cache":
-    warnings.warn(
-        "In-memory storage is allowed, but the backend is not 'cache'. "
-        "Consider using cache for better persistence and safety."
-    )
-
-# Expose for other modules
 STORAGE_BACKEND = required_backend

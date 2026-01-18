@@ -19,7 +19,7 @@ def customer_system(request):
     # VULNERABLE: Raw SQL with string concatenation
     user_id = request.user.id
     if search_query:
-        sql = f"SELECT * FROM Cyber_Course_Project_customer WHERE first_name  = '{search_query}' OR last_name    = '{search_query}' OR email        = '{search_query}' OR company_name = '{search_query}' OR phone_number = '{search_query}'"
+        sql = f"SELECT * FROM Cyber_Course_Project_customer WHERE first_name  = '{search_query}' OR last_name = '{search_query}' OR email = '{search_query}' OR company_name = '{search_query}' OR phone_number = '{search_query}'"
     else:
         sql = f"SELECT * FROM Cyber_Course_Project_customer WHERE created_by_id = '{user_id}'"
     
