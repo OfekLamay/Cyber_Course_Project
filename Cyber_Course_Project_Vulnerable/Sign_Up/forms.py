@@ -13,12 +13,12 @@ class CustomUserCreationForm(UserCreationForm):
         help_text="Required. Enter a valid email address."
     )
     first_name = forms.CharField(
-        max_length=30,
+        max_length=150,
         required=True,
         help_text="Required. Enter your first name."
     )
     last_name = forms.CharField(
-        max_length=30,
+        max_length=150,
         required=True,
         help_text="Required. Enter your last name."
     )
