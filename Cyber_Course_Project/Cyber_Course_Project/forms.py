@@ -41,10 +41,7 @@ class CustomerForm(forms.ModelForm):
         """Custom phone number validation"""
         phone = self.cleaned_data.get('phone_number')
         if phone:
-            # Remove common separators for validation
             cleaned_phone = phone.replace('-', '').replace(' ', '').replace('(', '').replace(')', '')
-            
-            # Check if it starts with + and has correct length
             if not cleaned_phone.startswith('+') and not cleaned_phone.isdigit():
                 raise forms.ValidationError("Phone number should contain only digits and optionally start with +")
                 
@@ -54,14 +51,14 @@ class CustomerForm(forms.ModelForm):
         """Save customer with creator information"""
         customer = super().save(commit=False)
         
-        if user and not customer.pk:  # Only set creator for new customers
+        if user and not customer.pk: 
             customer.created_by = user
             
         if commit:
             customer.save()
             
         return customer
-        
+
     class Meta:
         model = Customer
         fields = [
