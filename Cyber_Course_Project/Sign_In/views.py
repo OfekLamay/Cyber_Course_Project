@@ -7,8 +7,6 @@ from .Login_Authentications import User_Session_Manager
 from django.contrib.auth import authenticate
 from .User_Lockdown_Mangement import LockdownManagement
 from .Security_Config import SIGN_IN_CONFIG
-
-#ADI#
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 import json
@@ -21,6 +19,8 @@ from datetime import timedelta
 from email.message import EmailMessage
 import smtplib
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 class SignInForm(forms.Form):
    
@@ -279,50 +279,64 @@ def verify_code(request):
     # Valid code: redirect to reset page with email+code in query string
     return redirect(f"/Sign_In/reset-password/?email={email}&code={code}")
 
-#ADI#
+
 @login_required
 def change_password(request):
     """
-    Handles the Change Password screen.
-
-    GET  -> render the change_password.html form
-    POST -> validate current password and update to a new one
+    Handles Change Password with strict policy validation (Backend).
     """
-
-    # If the user submitted the form (POST request)
     if request.method == "POST":
-        # Read form fields from the POST data
         current_password = request.POST.get("current_password")
         new_password = request.POST.get("new_password")
         confirm_password = request.POST.get("confirm_password")
 
-        #  Basic validation: all fields must be filled
+        
         if not current_password or not new_password or not confirm_password:
             messages.error(request, "All fields are required.")
             return render(request, "change_password.html")
 
-        #  New password and confirmation must match
-        if new_password != confirm_password:
-            messages.error(request, "New password and confirmation do not match.")
-            return render(request, "change_password.html")
-
-        #  Check that the current password is correct for the logged-in user
+        
         user = request.user
         if not user.check_password(current_password):
             messages.error(request, "Current password is incorrect.")
             return render(request, "change_password.html")
 
+       
+        if new_password != confirm_password:
+            messages.error(request, "New password and confirmation do not match.")
+            return render(request, "change_password.html")
 
-        # Update the password securely using Django's built-in method
+        
+        errors = []
+        
+        if len(new_password) < 8:
+            errors.append("Password must be at least 8 characters long.")
+        
+        if not re.search(r'[A-Z]', new_password):
+            errors.append("Password must contain at least one uppercase letter (A-Z).")
+        
+        if not re.search(r'[a-z]', new_password):
+            errors.append("Password must contain at least one lowercase letter (a-z).")
+        
+        if not re.search(r'[0-9]', new_password):
+            errors.append("Password must contain at least one digit (0-9).")
+       
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>+=\[\]\\/_-]', new_password):
+            errors.append("Password must contain at least one special character (!@#$%^&*).")
+
+        if errors:
+            for err in errors:
+                messages.error(request, err)
+            return render(request, "change_password.html")
+        
+
+        
         user.set_password(new_password)
         user.save()
 
-        #  Keep the user logged in after the password change
+       
         update_session_auth_hash(request, user)
-
-        #  Show success message to the user
         messages.success(request, "Password changed successfully.")
         return render(request, "change_password.html")
 
-    # If this is a GET request, simply render the form
     return render(request, "change_password.html")
